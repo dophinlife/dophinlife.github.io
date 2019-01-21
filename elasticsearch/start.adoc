@@ -1,0 +1,1026 @@
+= Eleastic Search 文档
+Dophinlife <dophinlife.github.com>
+v1.0, 2019-01-18
+:toc: 
+
+== 特点
+
+* 查询
++
+可以任意的组合查询结构化、非结构化、地理位置等数据。查询语法简单。
+
+* 分析
++
+可以从更大的视角分析海量数据。
+
+* 非常快速
++
+实现了用于全文查询的带有有限状态转换器的反向索引，用户存储数字和地理数据的BDK树，以及用户分析的列存储。
+
+* 扩展性
++
+无缝从个人开发水平扩展至每秒处理无法计数事件的集群规模。索引和查询在集群中分布式自动管理。
+
+* 弹性
++
+es 会检测硬件和网络失败，保证集群安全和可用性。通过跨集群复制，辅助集群可以作为热备份运行。
+
+* 灵活性
++
+支持丰富的数据格式，数字、文本、地理、结构化、非结构化。支持一种，其他的就也可以支持。应用场景也十分丰富，搜索、安全分析、指标及日志只触及到了es广泛应用场景的表面。
+
+* 运维简单
+** 最新、最好（迁移、升级方便）
+** 可预测、可靠（以预期的方式运行）
+** 简单、透明（监控、管理工具）
+
+* 客户端库
++
+RESTful api、json。Java、Python、.NET、SQL、PHP、Perl、Ruby、JavaScript。
+ 
+* 强大的特性
++
+在安全、监控、报警、报表、图搜索、机器学习等方面可以做增强。
+ 
+* HADOOP & SPARK
++
+通过 https://www.elastic.co/products/hadoop[Elasticsearch-Hadoop(ES-Hadoop)] 对接HADOOP
+
+== 入门
+
+Elasticsearch 是一个高度可扩展的开源全文搜搜索和分析引擎，可以用于快速且近乎实时地存储、检索、分析海量数据。它通常作为底层引擎/技术，为具有复杂搜索功能和要求的应用程序提供支持。
+
+简单的使用场景：
+
+* 为购物网站提供商品搜索和自动补全功能；
+
+* 日志和事务数据搜索、分析、展示；
+
+* 利用反向查询实现物品降价通知；
+
+* 数据分析和商业智能。
+
+
+教程结束之后，应该具备这些能力：**可以很好的理解 Elasticsearch是什么，它是如何运行的，可以应用 Elasticsearch 解决复杂的搜索问题，或者做数据挖掘。**
+
+=== 基本概念
+
+==== 近实时
+
+从创建索引到数据可搜索有轻微的延迟，通常情况下延迟是1秒。
+
+==== 集群
+
+集群是一个或多个节点的集合，它们功能保存数据并提供横跨所有节点的联合索引和搜索能力。集群以名称作为唯一标识，对于通过名称加入集群的节点，集群名称十分重要。如果多个集群使用相同的名称，可能导致节点会加入到错误的集群。
+
+==== 节点
+
+节点是集群的一部分，可以存储数据，并且与其他节点一起为集群提供索引和搜索功能。节点也是用名称表示，默认情况下名称为随机的UUID。节点启动时，可以配置要加入的集群的名称。默认情况下加入名为elasticsearch的集群。
+
+WARNING: 集群是个什么概念，有没有master节点，如果有，如何选举？如果没有，节点之间如何通信，如何管理？
+
+==== 索引
+
+索引是具有相似特征的文本的集合。单个集群中，可以定义任意多数量的索引。
+
+==== 类型（Type）
+
+类型是索引中数据的逻辑划分，运行将不同类型的数据存储在相同的索引中。目前版本6.5，在后续版本将被移除。
+
+==== 文本（Document）
+
+文本是索引中存储信息的基本单元。文本是json格式的数据。
+
+在索引/类型中，可以存放任意多的文本。注意，尽管文本在物理上位于索引内，实际上必须把文本分配给索引中的类型。
+
+==== 分片与副本
+
+单个索引可能存储大量的数据，超过单个节点的硬件限制。为了解决这个问题，Elasticsearch提供了称作分片（shard）的东西将所有分成多份。在创建索引的时候，可以指定分片的数目。每一个分片是功能完整且独立的“索引”，可以存储在任意节点上。
+
+WARNING: 创建索引之后可以改变索引数目吗？（答：可以，但是要对数据重新分片，建议创建索引时指定分片数目。默认情况下，每个索引5个分片，1个完整索引副本，即副本的分片对应的也是5个） 索引数目有没有限制，怎么设置成最优的数目？
+
+分片很重要，基于以下两个主要原因：
+
+* 提供了水平切个数据的能力
+
+* 可以分布式、并行的进行跨分片操作，提高性能和吞吐量
+
+分片如何实现分布式以及查询背后文本如何聚合完全由Elasticsearch负责，对用户透明。
+
+在网络/云环境下，错误随时可能发生。当分片或节点由于某种原因下线或者消失时，故障转移机制将会非常有用、强烈推荐。因此，Elasticsearch允许用户为分片设置一个或多个备份，这叫做分片副本，简称为副本。
+
+副本也很重要，基于以下两个主要原因：
+
+* 提供了高可用能力，万一分片、节点错误。因此，副本不能和主分片分配在同一个节点上。
+
+* 可以在所有副本上执行并行搜索，这就允许扩展搜索量和吞吐量。
+
+WARNING: 为什么说“可以在所有副本上执行并行搜索，这就允许扩展搜索量和吞吐量”？
+
+=== 安装
+
+. 安装 JDK
++
+```
+curl -L -O https://download.oracle.com/otn-pub/java/jdk/8u201-b09/42970487e3af4f5aa5bca3f542482c60/jdk-8u201-linux-x64.tar.gz
+tar -zxvf jdk-8u201-linux-x64.tar.gz /usr/local
+# 编辑 /etc/profile，末尾添加，保存
+export JAVA_HOME=/usr/local/jdk1.8.0_201
+export JRE_HOME=${JAVA_HOME}/jre
+export PATH=${PATH}:${JAVA_HOME}/bin
+export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
+
+source /etc/profile
+```
+
+. 安装Elasticsearch
+
+.. 下载安装包
++
+```
+curl -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.5.4.tar.gz
+tar -xvf elasticsearch-6.5.4.tar.gz
+```
+
+.. 创建非root用户
++
+```
+groupadd elsearch
+useradd elsearch -g elsearch -p elasticsearch
+chown -R elsearch:elsearch  elasticsearch-6.5.4
+su - elsearch
+```
+
+.. 启动
++
+```
+cd elasticsearch-6.5.4/bin
+./elasticsearch
+```
+
+=== 操作
+
+* 集群健康状态
++
+```
+curl -X GET "localhost:9200/_cat/health?v"
+```
++
+返回
++
+```
+epoch      timestamp cluster       status node.total node.data shards pri relo init unassign pending_tasks max_task_wait_time active_shards_percent
+1547803519 09:25:19  elasticsearch green           1         1      0   0    0    0        0             0                  -                100.0%
+```
++
+集群的三种健康状态
++
+** [green]#*Green*# - 集群状况良好，集群功能齐全
+
+** [yellow]#*Yellow*# - 所有的数据可用，有些副本没分配（集群功能齐全）
+
+** [red]#*Red*# - 有些数据不可用（集群部分功能可用）
+
+NOTE: 当集群为[red]#*红色*#时，可以继续基于可用的分片服务查询请求。
+
+* 集群节点
++
+```
+curl -X GET "localhost:9200/_cat/nodes?v"
+```
+
+* 索引列表
++
+```
+curl -X GET "localhost:9200/_cat/indices?v"
+```
+
+* 创建索引
++
+```
+curl -X PUT "localhost:9200/customer?pretty"
+curl -X GET "localhost:9200/_cat/indices?v"
+```
+
+* 索引和文本查询
++
+```
+curl -X PUT "localhost:9200/customer/_doc/1?pretty" -H 'Content-Type: application/json' -d'
+{
+  "name": "John Doe"
+}
+'
+curl -X GET "localhost:9200/customer/_doc/1?pretty"
+```
+
+* 删除索引
++
+```
+curl -X DELETE "localhost:9200/customer?pretty"
+curl -X GET "localhost:9200/_cat/indices?v"
+```
+
+由上，Elasticsearch请求pattern：
+```
+<HTTP Verb> /<Index>/<Type>/<ID>
+```
+
+* 修改数据
+
+** 索引/替换 文本
++
+```
+curl -X PUT "localhost:9200/customer/_doc/1?pretty" -H 'Content-Type: application/json' -d'
+{
+  "name": "John Doe"
+}
+'
+
+curl -X PUT "localhost:9200/customer/_doc/1?pretty" -H 'Content-Type: application/json' -d'
+{
+  "name": "Jane Doe"
+}
+'
+
+curl -X PUT "localhost:9200/customer/_doc/2?pretty" -H 'Content-Type: application/json' -d'
+{
+  "name": "Jane Doe"
+}
+'
+
+curl -X POST "localhost:9200/customer/_doc?pretty" -H 'Content-Type: application/json' -d'
+{
+  "name": "Jane Doe"
+}
+'
+```
+
+* 更新文本
++
+Elasticsearch不会做就地更新，而是删除就的文本，重新索引新的文本。
++
+```
+curl -X POST "localhost:9200/customer/_doc/1/_update?pretty" -H 'Content-Type: application/json' -d'
+{
+  "doc": { "name": "Jane Doe" }
+}
+'
+
+curl -X POST "localhost:9200/customer/_doc/1/_update?pretty" -H 'Content-Type: application/json' -d'
+{
+  "doc": { "name": "Jane Doe", "age": 20 }
+}
+'
+
+curl -X POST "localhost:9200/customer/_doc/1/_update?pretty" -H 'Content-Type: application/json' -d'
+{
+  "script" : "ctx._source.age += 5"
+}
+'
+```
+
+* 删除文本
+
+```
+curl -X DELETE "localhost:9200/customer/_doc/2?pretty"
+```
+
+* 批量请求
++
+** 批量创建
++
+```
+curl -X POST "localhost:9200/customer/_doc/_bulk?pretty" -H 'Content-Type: application/json' -d'
+{"index":{"_id":"1"}}
+{"name": "John Doe" }
+{"index":{"_id":"2"}}
+{"name": "Jane Doe" }
+'
+```
++
+** 批量操作
++
+```
+curl -X POST "localhost:9200/customer/_doc/_bulk?pretty" -H 'Content-Type: application/json' -d'
+{"update":{"_id":"1"}}
+{"doc": { "name": "John Doe becomes Jane Doe" } }
+{"delete":{"_id":"2"}}
+'
+```
+
+单个操作不成功不会导致批量操作失败，其他的操作会继续执行。批量操作返回的时候，会以接收的顺序提供每个操作的状态信息。
+
+NOTE: 批量操作的失败处理及返回可以在平时设计api的时候参考下。
+
+* 探索你的数据
+
+** 样本数据
++ 
+这里link:https://github.com/elastic/elasticsearch/blob/master/docs/src/test/resources/accounts.json?raw=true[下载]account.json。执行
++
+```
+curl -H "Content-Type: application/json" -XPOST "localhost:9200/bank/_doc/_bulk?pretty&refresh" --data-binary "@accounts.json"
+curl "localhost:9200/_cat/indices?v"
+```
++
+返回
++
+```
+health status index    uuid                   pri rep docs.count docs.deleted store.size pri.store.size
+yellow open   bank     ZWZMhQEyTLW-ktPTwsYNYg   5   1       1000            0      483kb          483kb
+```
+
+** 搜索接口
+... 通过URI请求
++
+```
+curl -X GET "localhost:9200/bank/_search?q=*&sort=account_number:asc&pretty"
+```
+... 通过Request Body请求
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": { "match_all": {} },
+  "sort": [
+    { "account_number": "asc" }
+  ]
+}
+'
+```
+
++
+当查询结果返回之后，Elasticsearch就完成了该次请求，不会维护任何服务器端资源，或者在查询结果中打开的游标。这是跟sql之类的平台显著不同的地方，sql平台中，首先会返回开始的部分数据，在服务器端维护游标，下次请求时，可以继续从游标的位置继续获取剩余的数据。
+
+** 查询语言介绍
++
+Elasticsearch提供了json风格的查询DSL（domain-specific language）。查询语言十分全面，也许初见比较吓人。下面是几个例子：
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": { "match_all": {} }
+}
+'
+```
++
+限制返回数据的数目：
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": { "match_all": {} },
+  "size": 1
+}
+'
+```
++
+带有offset的查询：
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": { "match_all": {} },
+  "from": 10,
+  "size": 10
+}
+'
+```
++
+下面的例子是匹配所有的数据，并以账户结余倒序排序，返回最前的10个（默认）文本：
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": { "match_all": {} },
+  "sort": { "balance": { "order": "desc" } }
+}
+'
+```
+
+** 执行查询
+
+... 指定返回字段
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": { "match_all": {} },
+  "_source": ["account_number", "balance"]
+}
+'
+```
+
+... 条件查询
++
+```
+# 账户余额为 20
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": { "match": { "account_number": 20 } }
+}
+'
+# address 中包含 mill
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": { "match": { "address": "mill" } }
+}
+'
+# address 中包含 mill 或者 lane
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": { "match": { "address": "mill lane" } }
+}
+'
+# address 中包含 “mill lane”
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": { "match_phrase": { "address": "mill lane" } }
+}
+'
+```
+
+... bool查询
+**** must（AND语义）
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "address": "mill" } },
+        { "match": { "address": "lane" } }
+      ]
+    }
+  }
+}
+'
+```
+
+**** should（OR语义）
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "bool": {
+      "should": [
+        { "match": { "address": "mill" } },
+        { "match": { "address": "lane" } }
+      ]
+    }
+  }
+}
+'
+```
+
+**** must_not（neither nor 语义）
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "bool": {
+      "must_not": [
+        { "match": { "address": "mill" } },
+        { "match": { "address": "lane" } }
+      ]
+    }
+  }
+}
+'
+```
+
+... 组合bool查询
++
+可以组合bool查询，组合项之间是“与”的关系：
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "age": "40" } }
+      ],
+      "must_not": [
+        { "match": { "state": "ID" } }
+      ]
+    }
+  }
+}
+'
+```
+
+** 执行过滤
++
+查询结果中的_score字段代表了文本与查询语句的匹配度，_score数值越高相关性越大。
++
+有的查询不需要处理scores，比如过滤文本集。Elasticsearch会检测到这种情形，自动优化查询语句，不去计算无用的scores。
++
+bool查询也支持filter语句，在没有改变scores计算方式的要求下，允许我们用另外的语句限制查询文本。比如，range可以用来过滤数字或者日期。
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "bool": {
+      "must": { "match_all": {} },
+      "filter": {
+        "range": {
+          "balance": {
+            "gte": 20000,
+            "lte": 30000
+          }
+        }
+      }
+    }
+  }
+}
+'
+```
+
+** 执行聚合
++
+聚合提供了组合和统计数据的能力。
+
+*** 以 state 字段分组
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "size": 0,
+  "aggs": {
+    "group_by_state": {
+      "terms": {
+        "field": "state.keyword"
+      }
+    }
+  }
+}
+'
+
+# 相当于此 sql
+SELECT state, COUNT(*) FROM bank GROUP BY state ORDER BY COUNT(*) DESC LIMIT 10;
+```
++ 
+返回（部分）
++
+```
+{
+  "took": 29,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped" : 0,
+    "failed": 0
+  },
+  "hits" : {
+    "total" : 1000,
+    "max_score" : 0.0,
+    "hits" : [ ]
+  },
+  "aggregations" : {
+    "group_by_state" : {
+      "doc_count_error_upper_bound": 20,
+      "sum_other_doc_count": 770,
+      "buckets" : [ {
+        "key" : "ID",
+        "doc_count" : 27
+      }, {
+        "key" : "TX",
+        "doc_count" : 27
+      }, {
+        "key" : "AL",
+        "doc_count" : 25
+      }, {
+        "key" : "MD",
+        "doc_count" : 25
+      }, {
+        "key" : "TN",
+        "doc_count" : 23
+      }, {
+        "key" : "MA",
+        "doc_count" : 21
+      }, {
+        "key" : "NC",
+        "doc_count" : 21
+      }, {
+        "key" : "ND",
+        "doc_count" : 21
+      }, {
+        "key" : "ME",
+        "doc_count" : 20
+      }, {
+        "key" : "MO",
+        "doc_count" : 20
+      } ]
+    }
+  }
+}
+```
+*** 嵌套聚合
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "size": 0,
+  "aggs": {
+    "group_by_state": {
+      "terms": {
+        "field": "state.keyword"
+      },
+      "aggs": {
+        "average_balance": {
+          "avg": {
+            "field": "balance"
+          }
+        }
+      }
+    }
+  }
+}
+'
+```
++
+返回
++
+```
+{
+  "took": 11,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": 1000,
+    "max_score": 0,
+    "hits": []
+  },
+  "aggregations": {
+    "group_by_state": {
+      "doc_count_error_upper_bound": 20,
+      "sum_other_doc_count": 770,
+      "buckets": [
+        {
+          "key": "ID",
+          "doc_count": 27,
+          "average_balance": {
+            "value": 24368.777777777777
+          }
+        },
+        {
+          "key": "TX",
+          "doc_count": 27,
+          "average_balance": {
+            "value": 27462.925925925927
+          }
+        },
+        {
+          "key": "AL",
+          "doc_count": 25,
+          "average_balance": {
+            "value": 25739.56
+          }
+        },
+        {
+          "key": "MD",
+          "doc_count": 25,
+          "average_balance": {
+            "value": 24963.52
+          }
+        },
+        {
+          "key": "TN",
+          "doc_count": 23,
+          "average_balance": {
+            "value": 29796.782608695652
+          }
+        },
+        {
+          "key": "MA",
+          "doc_count": 21,
+          "average_balance": {
+            "value": 29726.47619047619
+          }
+        },
+        {
+          "key": "NC",
+          "doc_count": 21,
+          "average_balance": {
+            "value": 26785.428571428572
+          }
+        },
+        {
+          "key": "ND",
+          "doc_count": 21,
+          "average_balance": {
+            "value": 26303.333333333332
+          }
+        },
+        {
+          "key": "ME",
+          "doc_count": 20,
+          "average_balance": {
+            "value": 19575.05
+          }
+        },
+        {
+          "key": "MO",
+          "doc_count": 20,
+          "average_balance": {
+            "value": 24151.8
+          }
+        }
+      ]
+    }
+  }
+}
+```
++
+根据average_balance排序：
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "size": 0,
+  "aggs": {
+    "group_by_state": {
+      "terms": {
+        "field": "state.keyword",
+        "order": {
+          "average_balance": "desc"
+        }
+      },
+      "aggs": {
+        "average_balance": {
+          "avg": {
+            "field": "balance"
+          }
+        }
+      }
+    }
+  }
+}
+'
+```
++
+返回
++
+```
+{
+  "took": 9,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": 1000,
+    "max_score": 0,
+    "hits": []
+  },
+  "aggregations": {
+    "group_by_state": {
+      "doc_count_error_upper_bound": -1,
+      "sum_other_doc_count": 918,
+      "buckets": [
+        {
+          "key": "AL",
+          "doc_count": 6,
+          "average_balance": {
+            "value": 41418.166666666664
+          }
+        },
+        {
+          "key": "SC",
+          "doc_count": 1,
+          "average_balance": {
+            "value": 40019
+          }
+        },
+        {
+          "key": "AZ",
+          "doc_count": 10,
+          "average_balance": {
+            "value": 36847.4
+          }
+        },
+        {
+          "key": "VA",
+          "doc_count": 13,
+          "average_balance": {
+            "value": 35418.846153846156
+          }
+        },
+        {
+          "key": "DE",
+          "doc_count": 8,
+          "average_balance": {
+            "value": 35135.375
+          }
+        },
+        {
+          "key": "WA",
+          "doc_count": 7,
+          "average_balance": {
+            "value": 34787.142857142855
+          }
+        },
+        {
+          "key": "ME",
+          "doc_count": 3,
+          "average_balance": {
+            "value": 34539.666666666664
+          }
+        },
+        {
+          "key": "OK",
+          "doc_count": 9,
+          "average_balance": {
+            "value": 34529.77777777778
+          }
+        },
+        {
+          "key": "CO",
+          "doc_count": 13,
+          "average_balance": {
+            "value": 33379.769230769234
+          }
+        },
+        {
+          "key": "MI",
+          "doc_count": 12,
+          "average_balance": {
+            "value": 32905.916666666664
+          }
+        }
+      ]
+    }
+  }
+}
+```
++
+年龄按区间分组，然后再根据性别分组，最后计算每个区间、每种性别的平均账户结余：
++
+```
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "size": 0,
+  "aggs": {
+    "group_by_age": {
+      "range": {
+        "field": "age",
+        "ranges": [
+          {
+            "from": 20,
+            "to": 30
+          },
+          {
+            "from": 30,
+            "to": 40
+          },
+          {
+            "from": 40,
+            "to": 50
+          }
+        ]
+      },
+      "aggs": {
+        "group_by_gender": {
+          "terms": {
+            "field": "gender.keyword"
+          },
+          "aggs": {
+            "average_balance": {
+              "avg": {
+                "field": "balance"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+'
+```
++
+返回
++
+```
+{
+  "took": 6,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": 1000,
+    "max_score": 0,
+    "hits": []
+  },
+  "aggregations": {
+    "group_by_age": {
+      "buckets": [
+        {
+          "key": "20.0-30.0",
+          "from": 20,
+          "to": 30,
+          "doc_count": 451,
+          "group_by_gender": {
+            "doc_count_error_upper_bound": 0,
+            "sum_other_doc_count": 0,
+            "buckets": [
+              {
+                "key": "M",
+                "doc_count": 232,
+                "average_balance": {
+                  "value": 27374.05172413793
+                }
+              },
+              {
+                "key": "F",
+                "doc_count": 219,
+                "average_balance": {
+                  "value": 25341.260273972603
+                }
+              }
+            ]
+          }
+        },
+        {
+          "key": "30.0-40.0",
+          "from": 30,
+          "to": 40,
+          "doc_count": 504,
+          "group_by_gender": {
+            "doc_count_error_upper_bound": 0,
+            "sum_other_doc_count": 0,
+            "buckets": [
+              {
+                "key": "F",
+                "doc_count": 253,
+                "average_balance": {
+                  "value": 25670.869565217392
+                }
+              },
+              {
+                "key": "M",
+                "doc_count": 251,
+                "average_balance": {
+                  "value": 24288.239043824702
+                }
+              }
+            ]
+          }
+        },
+        {
+          "key": "40.0-50.0",
+          "from": 40,
+          "to": 50,
+          "doc_count": 45,
+          "group_by_gender": {
+            "doc_count_error_upper_bound": 0,
+            "sum_other_doc_count": 0,
+            "buckets": [
+              {
+                "key": "M",
+                "doc_count": 24,
+                "average_balance": {
+                  "value": 26474.958333333332
+                }
+              },
+              {
+                "key": "F",
+                "doc_count": 21,
+                "average_balance": {
+                  "value": 27992.571428571428
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
++
++
+更多的聚合查询请参考link:https://www.elastic.co/guide/en/elasticsearch/reference/6.5/search-aggregations.html[这里]。
+
+=== 结语
+
+Elasticsearch既简单又复杂。到目前为止，我们已经学习了基础部分，如何查看它，如何通过一些REST API使用它。希望此教程能够使你了解什么是ES，更重要的，能够激起你学习它其他更强大特性的兴趣。
