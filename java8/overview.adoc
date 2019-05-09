@@ -1,0 +1,2 @@
+
+image::images/java_conceptual_diagram.jpg[]
