@@ -1,0 +1,118 @@
+查询可以是一下中的任何一个：
+
+* 对于具体字段的结构化查询，例如 gender、age，以 join_date 排序，类似用 SQL 实现的查询；
+
+* 全文查询，查找所有匹配查询关键字的文档，并以相关性排序；
+
+* 以上两者的结合。
+
+为了充分利用ES的查询，需要理解下面3个概念：
+
+* Mapping
+
+    每个字段的数据是如何解释的
+
+* Analysis
+
+    为了实现可搜索，全文本是如何处理的
+
+* Query DSL
+
+    ES使用的灵活且功能强大的查询语言
+
+## 查询返回字段说明
+
+```
+{
+   "hits" : {
+      "total" :       14,
+      "hits" : [
+        {
+          "_index":   "us",
+          "_type":    "tweet",
+          "_id":      "7",
+          "_score":   1,
+          "_source": {
+             "date":    "2014-09-17",
+             "name":    "John Smith",
+             "tweet":   "The Query DSL is really powerful and flexible",
+             "user_id": 2
+          }
+       },
+        ... 9 RESULTS REMOVED ...
+      ],
+      "max_score" :   1
+   },
+   "took" :           4,
+   "_shards" : {
+      "failed" :      0,
+      "successful" :  10,
+      "total" :       10
+   },
+   "timed_out" :      false
+}
+```
+
+### hits
+
+响应中最重要的部分，包含匹配查询条件的文档数（total）、包含前10个查询结果的hits数组。
+
+### took
+
+执行整个查询请求花费的毫秒数
+
+### shards
+
+查询设计到的shard数，其中成功多少，失败多少
+
+### timeout
+
+查询是否超时。默认情况下，查询没有超时时间。如果低的响应时间比完整的查询结果更重要，可以设置查询的超时时间:
+
+```
+GET /_search?timeout=10ms
+```
+ES将返回超时之前从各shard收集到的结果。
+
+WARNING: timeout 不会暂停查询的执行，仅仅告诉相应的node返回目前为止的结果集并关闭连接。尽管结果已经返回，在后台，别的shard可能仍在处理查询。
+
+## 查询
+
+### 查询请求
+
+```
+/_search
+Search all types in all indices
+/gb/_search
+Search all types in the gb index
+/gb,us/_search
+Search all types in the gb and us indices
+/g*,u*/_search
+Search all types in any indices beginning with g or beginning with u
+/gb/user/_search
+Search type user in the gb index
+/gb,us/user,tweet/_search
+Search types user and tweet in the gb and us indices
+/_all/user,tweet/_search
+Search types user and tweet in all indices
+```
+
+### 分页
+
+ES 接受 from 和 size 参数：
+
+*size*
+
+    指定返回结果集的数目，默认为10
+
+from
+
+    指定需要跳过的结果数据，默认为0
+
+NOTE: 分页太深会成为一个问题。Now imagine that we ask for page 1,000—results 10,001 to 10,010. Everything works in the same way except that each shard has to produce its top 10,010 results. The coordinating node then sorts through all 50,050 results and discards 50,040 of them!
+
+### 查询方式
+
+* query string
+
+* JSON based full request body

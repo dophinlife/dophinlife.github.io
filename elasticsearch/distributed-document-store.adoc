@@ -1,0 +1,57 @@
+本章包含了一些关于数据是怎样在es中分布式存储的技术细节。
+
+## 路由文档到Shard
+
+```
+shard = hash(routing) % number_of_primary_shards
+```
+
+routing 可以是任意的字符串，默认值是文档的_id。这解释了为什么当创建索引时主shard的数据一经确定，
+之后就不能修改。假如修改了，所有之前的路由数据都失效，并且文档不能被找到。
+
+## 主shard和副本shard如何相互作用
+
+### 创建/索引/删除一个文档
+
+Create/index/delete 请求都是写操作，必须在主shard上成功完成，才可以复制到相应的副本shard中，如下图所示：
+
+image::https://www.elastic.co/guide/en/elasticsearch/guide/2.x/images/elas_0402.png[Creating,indexing,or deleting a single document]
+
+请求流程：
+
+1. 客户端发送create、index或者delete请求到 node1；
+
+1. 节点利用文档的_id确定文档属于shard 0。然后，将请求转发到主shard所在的节点node3；
+
+1. node3 在主shard上执行请求。如果成功，并行地向副本shard所在的节点node1和node2转发请求。一旦所有的副本shard执行成功，
+node3向相应的节点返回成功，这个节点再向客户端返回成功。
+
+客户端成功接收到响应时，文档的更改已经在所有的主shard和副本shard执行完成。更改是安全的。
+
+有一些参数可以调整写入的流程，可以牺牲数据的安全性（这里应该指一致性）来提升性能：
+
+consistency: one,all, quorum
+
+```
+int( (primary + number_of_replicas) / 2 ) + 1
+```
+
+timeout
+
+### 获取一个文档
+
+image::https://www.elastic.co/guide/en/elasticsearch/guide/current/images/elas_0403.png[Retriving a single document]
+
+请求步骤：
+
+1. 客户端向 node1 发送get请求；
+
+1. node1利用文档的_id确定文档属于shard0。采用一些算法（为了均衡负载）将请求forwar到node2；
+
+1. node2返回文档给node1，node1返回数据给客户端。
+
+NOTE: 当创建索引成功返回给用户的时候，文档在所有的主shard和副本shard都是可见的。
+
+### 部分修改文档
+
+image::https://www.elastic.co/guide/en/elasticsearch/guide/current/images/elas_0404.png[Partial updates to a document]
