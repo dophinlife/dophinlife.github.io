@@ -74,7 +74,7 @@ public class Stack<E> extends Vector<E> {
 
 ### push
 
-push方法比较简单，真正的逻辑在[Vector](https://dophinlife.github.io/daily-note/Vector-source-code-analysis) 的addElement(E)方法中。
+push方法比较简单，真正的逻辑在[Vector](https://dophinlife.github.io/jdk/Vector-source-code-analysis) 的addElement(E)方法中。
 
 # pop
 TODO

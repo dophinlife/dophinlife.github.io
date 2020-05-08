@@ -17,7 +17,7 @@ Stack是一种后进先出（LIFO）的数据结构，它扩展了Vector类，�
 public synchronized void addElement(E obj) {
     /**
      * 结构化修改的次数，结构化修改指大小变化或其他可能导致不
-     *正确迭代遍历的情况，实现iterator的fail-fast机制中有用到
+     * 正确迭代遍历的情况，实现iterator的fail-fast机制中有用到
      */
     modCount++;
     // 将元素添加到vector内部的数组中
