@@ -1,7 +1,7 @@
 ---
 title: "从源码构建 nifi-standard-bundle"
 layout: post
-category: 日常记录
+category: note
 tags: [nifi, build]
 excerpt: "记录从源码构建nifi-standard-bundle时遇到的问题"
 ---
