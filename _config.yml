@@ -20,7 +20,7 @@ permalink: /:categories/:title
 excerpt_separator: "[-----]"
 
 url: # Required: replace this with your domain
-name: dophinlife # Required: will be displayed on every page's header
+name: 不积跬步，无以至千里 # Required: will be displayed on every page's header
 title: Dophinlife's personal blog # Required: site's default title
 shout: # Required: **TWO** lines, will be displayed on page's header.
   - NEVER
