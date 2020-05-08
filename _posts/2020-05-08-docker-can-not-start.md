@@ -1,7 +1,7 @@
 ---
 title: "docker engine 无法正常启动"
 layout: post
-category: note
+category: daily-note
 tags: [docker]
 excerpt: "docker engine 无法正常启动问题"
 ---
@@ -29,4 +29,4 @@ Job for docker.service failed because the control process exited with error code
 5月 07 12:37:54 host-10-0-197-127 systemd[1]: docker.service failed.
 ```
 
-输出中没有有用的信息，最后发现是因为配置了国内的镜像，镜像文件为/etc/docker/daemon.json，将 daemon.json 改为 daemon.conf 后，docker即可正常启动。
+输出中没有有用的信息，比较难以定位错误。重新安装 docker 后，仍没有解决。最后发现是因为配置了国内的镜像，镜像文件为/etc/docker/daemon.json，将 daemon.json 改为 daemon.conf 后，docker即可正常启动。
