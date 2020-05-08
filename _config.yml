@@ -20,8 +20,8 @@ permalink: /:categories/:title
 excerpt_separator: "[-----]"
 
 url: https://dophinlife.github.io/ # Required: replace this with your domain
-name: 不积跬步，无以至千里 # Required: will be displayed on every page's header
-title: Dophinlife's personal blog # Required: site's default title
+name: "不积跬步，无以至千里" # Required: will be displayed on every page's header
+title: "Dophinlife's personal blog" # Required: site's default title
 shout: # Required: **TWO** lines, will be displayed on page's header.
   - NEVER
   - OR NOW
