@@ -1,5 +1,5 @@
 ---
-title: "HTTP 头和 PHP header() 函数"
+title: "从源码构建NIFI"
 layout: post
 category: translation
 tags: [php, http]
