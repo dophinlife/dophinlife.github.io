@@ -77,4 +77,39 @@ public class Stack<E> extends Vector<E> {
 push方法比较简单，真正的逻辑在[Vector](https://dophinlife.github.io/jdk/Vector-source-code-analysis) 的addElement(E)方法中。
 
 # pop
-TODO
+
+移除栈顶元素，并返回移除的元素。代码如下：
+```
+/**
+ * 方法内部的实现是 get then remove
+ * synchronized 保证操作的原子性，线程安全
+ */
+public synchronized E pop() {
+    E       obj;
+    // 获取元素的个数
+    int     len = size();
+    // 获取栈顶元素
+    obj = peek();
+    // 移除栈顶元素
+    removeElementAt(len - 1)
+
+    return obj;
+}
+```
+
+## peek
+
+获取栈顶元素的值，不删除。代码如下：
+```
+/**
+ * 先获取长度，在取值
+ * synchronized 复合操作的原子性
+ */
+public synchronized E peek() {
+    int     len = size();
+
+    if (len == 0)
+        throw new EmptyStackException();
+    return elementAt(len - 1);
+}
+```
