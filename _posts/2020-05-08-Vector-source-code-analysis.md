@@ -5,7 +5,54 @@ category: jdk
 tags: [collection, jdk8, vector]
 excerpt: "Vector 数据结构源码分析"
 ---
-Stack是一种后进先出（LIFO）的数据结构，它扩展了Vector类，增加了5个方法，使其具有Stack的特性。
+Vector 是一个可伸缩容量的数组对象。
+
+## fields 描述
+
+```
+public class Vector<E>
+    extends AbstractList<E>
+    implements List<E>, RandomAccess, Cloneable, java.io.Serializable {
+    /**
+     * 存放 Vector 中的元素，容量不小于元素的总个数
+     */
+    protected Object[] elementData;
+
+    /**
+     * Vector 中的元素个数
+     */
+    protected int elementCount;
+
+    /**
+     * 需要扩容时，自动增加的容量
+     */
+    protected int capacityIncrement;
+}
+
+```
+## 构造函数
+
+```
+/**
+ * 为什么没有校验 capacityIncrement
+ */
+public Vector(int initialCapacity, int capacityIncrement) {
+    super();
+    if (initialCapacity < 0)
+        throw new IllegalArgumentException("Illegal Capacity: "+ initialCapacity);
+    // 构造函数中分配内存，并不是lazy init
+    this.elementData = new Object[initialCapacity];
+    this.capacityIncrement = capacityIncrement;
+}
+
+public Vector(int initialCapacity) {
+    this(initialCapacity, 0);
+}
+
+public Vector() {
+    this(10);
+}
+```
 
 ## 方法介绍
 

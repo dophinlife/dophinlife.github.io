@@ -5,7 +5,7 @@ category: jdk
 tags: [collection, jdk8]
 excerpt: "Stack 数据结构源码分析"
 ---
-Stack是一种后进先出（LIFO）的数据结构，它扩展了Vector类，增加了5个方法，使其具有Stack的特性。
+Stack是一种后进先出（LIFO）的数据结构，它扩展了Vector类，增加了5个具有Stack特性的方法。由于 Vector 是线程安全的，Stack 的大多数方法继承了 Vector 的线程安全特性，对于 5 个特有的方法，也通过 synchronized 机制保证了线程安全。
 
 ## 方法介绍
 
