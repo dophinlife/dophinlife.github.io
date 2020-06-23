@@ -35,7 +35,7 @@ excerpt: "《Spring Boot 2.0 深度实践之核心技术篇》视频课程笔记
 - Web Servlet: Tomcat、Jetty 和 Undertow
 - Web Reactive: Netty Web Server
 
-### 传统 Servlet 应用
+#### 传统 Servlet 应用
 
 - Servlet 组件：Servlet、Filter、Listener
   - Servlet
@@ -49,6 +49,47 @@ excerpt: "《Spring Boot 2.0 深度实践之核心技术篇》视频课程笔记
       - @ServletComponentScan(basePackages = "com.imooc.diveinspringboot.web.servlet")
 - Servlet 注册：Servlet 注解（Servlet 3.0）、Spring Bean、RegistrationBean
 - 异步非阻塞（Servlet 3.0+）：异步 Servlet（3.0）、非阻塞 Servlet（3.1）
+
+#### Spring Web MVC 应用
+
+- Web MVC 视图：模板引擎、内容协商、异常处理等
+  - 视图
+    - ViewResolver
+    - View
+  - 模板引擎
+    - Thymeleaf
+    - FreeMarker
+    - JSP
+  - 内容协商
+    - ContentNegotiationConfigurer
+    - ContentNegotiationStrategy
+    - ContentNegotiationResolver
+  - 异常处理
+    - @ExceptionHandler
+    - HandleExceptionResolver
+      - ExceptionHandleExceptionResolver
+    - BasicErrorController
+- Web MVC Rest：资源服务、资源跨域、服务发现等
+  - 资源服务
+    - `@RequestMapping`
+      - `@GetMapping`
+    - `@ResponseBody`
+    - `@RequestBody`
+  - 资源跨域
+    - `CrossOrigin`
+    - `WebMvcConfigurer#addCorsMappings`
+    - 传统解决方案
+      - IFrame
+      - JSONP
+  - 服务发现
+    - HATEOS
+- Web MVC 核心：核心架构、处理流程、核心组件
+  - 核心组件
+    - `DispatcherServlet`
+    - `HandlerMapping`
+    - `HandlerAdapter`
+    - `ViewResolver`
+    - ...
 
 ### Production-Ready
 
