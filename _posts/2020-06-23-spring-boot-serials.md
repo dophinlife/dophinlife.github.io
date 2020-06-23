@@ -2,7 +2,7 @@
 title: "Spring Boot 2.0 深度实践之核心技术篇"
 layout: post
 category: daily-note
-tags: [linux, system]
+tags: [springboot]
 excerpt: "《Spring Boot 2.0 深度实践之核心技术篇》视频课程笔记，跟随课程的联系项目 [在此]() "
 ---------------------------------------------------------
 
