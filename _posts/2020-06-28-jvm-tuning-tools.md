@@ -124,3 +124,39 @@ GC 统计概要。输出格式如下所示：
 每 n 次采样显示一次列头部信息，默认值为0，表示仅在第一行显示。
 #### -t
 显示 timestamp 作为第一列，表示 JVM 启动到现在的秒数。
+
+# jmap
+打印 java 进程、dump 文件中共享对象内存映射以及堆内存的细节信息。
+如果是64位的 JVM，可能还需要加上参数 -J-d64.
+
+命令行形式如下：
+```
+jmap [ options ] pid
+
+jmap [ options ] executable core
+
+jmap [ options ] [ pid ] server-id@ ] remote-hostname-or-IP
+```
+## -dump:[live,] format=b, file=filename
+
+以 hprof 二进制格式生成堆转储文件到 filename 文件中。其中，live 是
+可省略的。如果不省略，表示转储堆中存活的对象。
+
+## -finalizerinfo
+
+打印等待终结的对象信息。
+
+## -heap
+打印 GC 使用的堆概要， **TODO**
+
+## -histo[:live]
+打印堆内存占用直方图。对于每一个 java 类，打印出对象个数、占用的内存字节数、类的全限定名等。
+JVM 内部类以 * 开始。如果指定 live，表示打印存活对象。输出格式如下所示：
+![](../assets/img/posts/202006/jmap-histo-live.png)
+
+## -clstats
+打印类加载器的统计信息。对于每一个类加载器，打印出 名称、TODO
+
+## -F
+强制。当执行 jmap -dump 或者 jmap -histo 时，JVM 没有响应可使用该选项。
+## 
