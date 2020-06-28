@@ -90,6 +90,7 @@ JVM jit 编译相关的统计。输出格式如下所示:
 - FGC: Full GC 事件数
 
     OGC = sum(OC)
+
 ##### gcutil
 GC 统计概要。输出格式如下所示：
 ![jstat-gcutil](../assets/img/posts/202006/jstat-gcutil.png)
