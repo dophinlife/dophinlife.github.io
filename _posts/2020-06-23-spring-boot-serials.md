@@ -5,8 +5,9 @@ category: daily-note
 tags: [springboot]
 excerpt: "《Spring Boot 2.0 深度实践之核心技术篇》视频课程笔记，跟随课程的联系项目 [在此]() "
 ---
+# 概览
 
-# Spring Boot 特性
+## Spring Boot 特性
 
 - **组件自动装配：** 规约大于配置，专注于核心业务
 - **嵌入式容器：** 内置容器、无需部署、独立运行
@@ -14,7 +15,7 @@ excerpt: "《Spring Boot 2.0 深度实践之核心技术篇》视频课程笔记
 - 外部化配置：一次构建、按需调配，到处运行
 - Spring Boot Starter：简化依赖、按需装配、自我包含
 
-## 易学难精
+### 易学难精
 
 - **组件自动装配：** 模式注解、@Enable 模块、条件装配、加载机制
 - **外部化配置：** Environment 抽象、生命周期、破坏性变更
@@ -22,20 +23,20 @@ excerpt: "《Spring Boot 2.0 深度实践之核心技术篇》视频课程笔记
 - **Spring Boot Starter：** 依赖管理、装配条件、装配顺序
 - **Production-Ready：** 健康检查、数据指标、@Endpoint 管控
 
-## 核心特性
+### 核心特性
 
-### 组件自动装配
+#### 组件自动装配
 
 - 激活：@EnableAutoConfiguration
 - 配置：/META-INF/spring.factories
 - 实现：XXXAutoConfiguration
 
-### 嵌入式 Web 容器
+#### 嵌入式 Web 容器
 
 - Web Servlet: Tomcat、Jetty 和 Undertow
 - Web Reactive: Netty Web Server
 
-#### 传统 Servlet 应用
+##### 传统 Servlet 应用
 
 - Servlet 组件：Servlet、Filter、Listener
   - Servlet
@@ -50,7 +51,7 @@ excerpt: "《Spring Boot 2.0 深度实践之核心技术篇》视频课程笔记
 - Servlet 注册：Servlet 注解（Servlet 3.0）、Spring Bean、RegistrationBean
 - 异步非阻塞（Servlet 3.0+）：异步 Servlet（3.0）、非阻塞 Servlet（3.1）
 
-#### Spring Web MVC 应用
+##### Spring Web MVC 应用
 
 - Web MVC 视图：模板引擎、内容协商、异常处理等
   - 视图
@@ -91,13 +92,25 @@ excerpt: "《Spring Boot 2.0 深度实践之核心技术篇》视频课程笔记
     - `ViewResolver`
     - ...
 
-### Production-Ready
+##### Spring Web Flux 应用
+
+- Reactor 基础：Java Lambda、Mono、Flux
+- Web Flux 核心：Web MVC 注解、函数式声明、异步非阻塞
+- 使用场景：Web Flux 优势和限制
+
+##### Web Server 应用
+
+- 切换 Web Server
+- 自定义 Servlet Web Server
+- 自定义 Reactive Web Server
+
+#### Production-Ready
 
 - 指标：/actuator/metrics
 - 健康检查：/actuator/health
 - 外部化配置：/actuator/configprops
 
-# Spring Boot 与 Java EE 规范
+## Spring Boot 与 Java EE 规范
 
 - Web : Servlet
 - SQL : JDBC
@@ -107,3 +120,9 @@ excerpt: "《Spring Boot 2.0 深度实践之核心技术篇》视频课程笔记
 - Web Services : JAX-WS
 - Java 管理 : JMX
 - 消息 : JMS
+
+## 数据介绍
+
+- JDBC：数据源、JdbcTemplate、自动装配
+- JPA：实体映射关系、实体操作、自动装配
+- 事务：Spring 事务抽象、JDBC 事务处理、自动装配
