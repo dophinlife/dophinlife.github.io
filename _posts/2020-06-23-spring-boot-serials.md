@@ -226,3 +226,50 @@ excerpt: "《Spring Boot 2.0 深度实践之核心技术篇》视频课程笔记
   ```
 
 ## Spring Boot 自动装配
+
+**定义**：基于约定大于配置的原则，实现 Spring 组件自动装配的目的
+
+**装配**：模式注解、@Enable 模块、条件装配、工厂加载机制
+
+**实现**：激活自动装配、实现自动装配、配置自动装配实现
+
+1 激活自动装配
+```java
+@EnableAutoConfiguration
+public class EnableAutoConfigurationBootstrap {
+    public static void main(String[] args) {
+        ConfigurableApplicationContext context = new SpringApplicationBuilder(EnableAutoConfigurationBootstrap.class)
+                .web(WebApplicationType.NONE)
+                .run(args);
+
+        String helloWorld = context.getBean("helloWorld", String.class);
+        System.out.println(helloWorld);
+
+        // 关闭上下文
+        context.close();
+    }
+}
+```
+2 实现自动装配
+```java
+/**
+ * HelloWorld 自动装配
+ *
+ * @author guangp
+ * @since 2020/6/29
+ */
+@Configuration // Spring 模式注解装配
+@EnableHelloWorld // Spring @Enable 模块装配
+@ConditionalOnSystemProperty(name = "user.name", value = "guangp") // 条件装配
+public class HelloWorldAutoConfiguration {
+}
+```
+3 配置自动装配实现
+```
+# META-INF/spring.factories
+# 自动装配
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.imooc.diveinspringboot.configuration.HelloWorldAutoConfiguration
+```
+
+# SpringApplication
