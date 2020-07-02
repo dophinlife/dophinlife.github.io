@@ -148,15 +148,30 @@ jmap [ options ] [ pid ] server-id@ ] remote-hostname-or-IP
 打印等待终结的对象信息。
 
 ## -heap
-打印 GC 使用的堆概要， **TODO**
+打印 GC 使用的堆概要，堆的配置和使用情况，以及 interned string 的个数和大小。输出  
+格式如下所示:
+
+![](../assets/images/202006/jmap-heap-1.png)
+
+![](../assets/images/202006/jmap-heap-2.png)
 
 ## -histo[:live]
 打印堆内存占用直方图。对于每一个 java 类，打印出对象个数、占用的内存字节数、类的全限定名等。
 JVM 内部类以 * 开始。如果指定 live，表示打印存活对象。输出格式如下所示：
+
 ![](../assets/img/posts/202006/jmap-histo-live.png)
 
 ## -clstats
-打印类加载器的统计信息。对于每一个类加载器，打印出 名称、TODO
+打印类加载器的统计信息。输出格式如下所示：
+
+![](../assets/images/202006/jmap-clstats.png)
+
+- class_loader：类加载器地址
+- classes：类加载器加载类的个数
+- bytes：类加载器加载的类占用 metadata 的大小
+- parent_loader：父加载器地址
+- alive？：加载器对象是否将被 GC 回收
+- type：类加载器类名称
 
 ## -F
 强制。当执行 jmap -dump 或者 jmap -histo 时，JVM 没有响应可使用该选项。
