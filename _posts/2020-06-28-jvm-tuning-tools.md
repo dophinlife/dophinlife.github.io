@@ -192,3 +192,28 @@ JVM 内部类以 * 开始。如果指定 live，表示打印存活对象。输�
 
 ## -l 打印锁的相关信息
 ![](../assets/images/202006/jstack-l.png)
+
+# jcmd
+用于向 JVM 发送诊断命令请求，这些请求对于控制 Java 运行记录、排除故障以及诊断 JVM 和
+Java 应用很有帮助。必须跟 JVM 运行在同一个实例上，以相同的用户和用户组运行。
+
+命令 `jcmd <process id/main class> PerfCounter.print` 打印所有进程中的性能计数器（performance counters）：
+
+![](../assets/images/202006/jcmd-PerfCounter.png)
+
+命令行格式如下：
+
+```
+jcmd <process id/main class> <command> [options] 
+```
+## help
+打印出所有可用的指令。如下:
+
+![](../assets/images/202006/jcmd-help.png)
+
+## Thread.print
+打印线程相关信息。如下：
+
+![](../assets/images/202006/jcmd-Thread.print.png)
+
+## 其他命令详见 [官方文档](https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/tooldescr006.html)
