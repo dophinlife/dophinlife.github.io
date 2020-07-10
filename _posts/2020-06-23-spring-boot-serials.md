@@ -272,4 +272,212 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 com.imooc.diveinspringboot.configuration.HelloWorldAutoConfiguration
 ```
 
-# SpringApplication
+# 理解 SpringApplication
+
+## 基础技术
+### Spring Framework
+- Spring 模式注解
+- Spring 应用上下文
+- Spring 工厂加载机制
+- Spring 应用上下文初始化器
+- Spring Environment 抽象
+- Spring 应用事件/监听器
+
+## 衍生技术
+### Spring Boot
+- SpringApplication
+- SpringApplication Builder API
+- SpringApplication 运行监听器
+- SpringApplication 参数
+- SpringApplication 故障分析
+- Spring Boot 应用事件/监听器
+
+## 准备阶段
+
+### SpringApplication
+
+定义：Spring 应用引导类，提供便利的自定义行为方法
+
+场景：嵌入式 Web 应用和非 Web 应用
+
+运行：SpringApplication#run(String...)
+
+#### 基本使用
+
+```
+SpringApplication.run(DiveInSpringBootApplication.class, args);
+```
+#### 自定义 SpringApllication
+
+- SpringApplication API
+- SpringApplicationBuilder API
+
+### 过程
+
+#### 配置：Spring Bean 来源
+
+```
+/**
+ * SpringApplication 引导类
+ *
+ * @author guangp
+ * @since 2020/7/7
+ */
+public class SpringApplicationBootstrap {
+    public static void main(String[] args) {
+//        SpringApplication.run(ApplicationConfig.class, args);
+        Set<String> sources = new HashSet<>();
+        sources.add(ApplicationConfig.class.getName());
+        
+        SpringApplication springApplication = new SpringApplication();
+        // 配置源
+        springApplication.setSources(sources);
+        springApplication.setWebApplicationType(WebApplicationType.NONE);
+        ConfigurableApplicationContext context = springApplication.run(args);
+        System.out.println("Bean: " +  context.getBean(ApplicationConfig.class));
+    }
+
+    @SpringBootApplication
+    public static class ApplicationConfig {
+    }
+}
+```
+
+#### 推断：Web 应用类型和主引导类
+
+```
+public SpringApplication(ResourceLoader resourceLoader, Class<?>... primarySources) {
+	this.resourceLoader = resourceLoader;
+	Assert.notNull(primarySources, "PrimarySources must not be null");
+	this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+	this.webApplicationType = WebApplicationType.deduceFromClasspath();
+	setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
+	setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+	this.mainApplicationClass = deduceMainApplicationClass();
+}
+```
+推断 Web 应用类型
+```
+static WebApplicationType deduceFromClasspath() {
+	if (ClassUtils.isPresent(WEBFLUX_INDICATOR_CLASS, null) && !ClassUtils.isPresent(WEBMVC_INDICATOR_CLASS, null)
+			&& !ClassUtils.isPresent(JERSEY_INDICATOR_CLASS, null)) {
+		return WebApplicationType.REACTIVE;
+	}
+	for (String className : SERVLET_INDICATOR_CLASSES) {
+		if (!ClassUtils.isPresent(className, null)) {
+			return WebApplicationType.NONE;
+		}
+	}
+	return WebApplicationType.SERVLET;
+}
+```
+推断主引导类
+```
+private Class<?> deduceMainApplicationClass() {
+	try {
+		StackTraceElement[] stackTrace = new RuntimeException().getStackTrace();
+		for (StackTraceElement stackTraceElement : stackTrace) {
+			if ("main".equals(stackTraceElement.getMethodName())) {
+				return Class.forName(stackTraceElement.getClassName());
+			}
+		}
+	}
+	catch (ClassNotFoundException ex) {
+		// Swallow and continue
+	}
+	return null;
+}
+```
+#### 加载：应用上下文初始器和应用事件监听器
+
+## 运行阶段
+
+### 加载：SpringApplication 运行监听器（SpringApplicationRunListeners）
+利用 Spring 工程加载机制，读取 SpringApplicationRunListener 对象集合，并封装到组合类。
+```
+public ConfigurableApplicationContext run(String... args) {
+	StopWatch stopWatch = new StopWatch();
+	stopWatch.start();
+	ConfigurableApplicationContext context = null;
+	Collection<SpringBootExceptionReporter> exceptionReporters = new ArrayList<>();
+	configureHeadlessProperty();
+	// 调用 getRunListeners 加载 SpringApplication 运行监听器（SpringApplicationRunListeners）
+	SpringApplicationRunListeners listeners = getRunListeners(args);
+	listeners.starting();
+	...
+}
+
+private SpringApplicationRunListeners getRunListeners(String[] args) {
+	Class<?>[] types = new Class<?>[] { SpringApplication.class, String[].class };
+	return new SpringApplicationRunListeners(logger,
+			getSpringFactoriesInstances(SpringApplicationRunListener.class, types, this, args));
+}
+```
+### 运行：SpringApplication 运行监听器（SpringApplicationRunListeners）
+SpringApplicationRunListener 监听多个运行态方法：
+
+| 监听方法 | 阶段说明 | Spring Boot 起始版本 |
+|---|---|---|
+| starting() | Spring 应用刚启动 | 1.0 |
+| environmentPrepared(ConfigurableEnvironment environment) | environment 准备完成，但是在 ApplicationContext 创建之前 | 1.0 |
+| contextPrepared(ConfigurableApplicationContext context) | ApplicationContext 创建完成，但是在 sources 加载之前 | 1.0 |
+| contextLoaded(ConfigurableApplicationContext context) | ApplicationContext 加载完成，但是在 refresh 之前 | 1.0 |
+| started(ConfigurableApplicationContext context) | ApplicationContext refresh 完成，应用也已启动，但是在 CommandLineRunners 和 ApplicationRunner 被调用之前 | 2.0.0 |
+| running(ConfigurableApplicationContext context) | run() 结束前立即被调用，此时 context refresh 完成，CommandLineRunners 和 ApplicationRunner 也已被调用 | 2.0.0 |
+| failed(ConfigurableApplicationContext context, Throwable exception) | Spring 应用运行失败 | 2.0.0 |
+
+### 监听 Spring Boot / Spring 事件
+
+Spring Boot 通过 SpringApplicationRunListener 的实现类 EventPublishingRunListener，利用
+Spring Framework 事件 API，广播 Spring Boot 事件。
+
+#### Spring Framework 事件/监听器编程模型
+
+- Spring 应用事件
+  - 普通应用事件：`ApplicationEvent`
+  - 应用上下文事件：`ApplicationContextEvent`
+- Spring 应用监听器
+  - 接口编程模型：ApplicationListener
+  - 注解编程模型：@EventListener
+- Spring 应用事件广播
+  - 接口：ApplicationEventMulticaster
+  - 实现类：SimpleApplicationEventMulticaster
+    - 执行模式：异步 或 同步
+
+### 创建：应用上下文、Environment、其他（不重要）
+
+### 失败：故障分析报告
+
+### 回调：CommandLineRunner、ApplicationRunner
+
+# Web MVC 核心
+
+## 理解 Spring Web MVC 架构
+
+### 基础架构：Servlet
+
+![](../assets/images/202007/servlet-handle-process.png)
+
+#### Servlet 特点
+- 请求/响应式(Request/Response)
+- 屏蔽网络通讯的细节
+- 完整的生命周期
+
+#### Servlet 职责
+- 处理请求
+- 资源管理
+- 视图渲染
+
+### 核心架构： [前端控制器（Front Controller）](http://www.corej2eepatterns.com/FrontController.htm)
+
+![](../assets/images/202007/front-controller.png)
+
+### Spring Web MVC 架构
+
+![](../assets/images/202007/spring-web-mvc-arch.png)
+
+## 认识 Spring Web MVC
+
+- 实现 Controller
+- 配置 Web MVC 组件
+- 部署 DispatcherServlet
