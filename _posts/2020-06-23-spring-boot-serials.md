@@ -481,3 +481,139 @@ Spring Framework 事件 API，广播 Spring Boot 事件。
 - 实现 Controller
 - 配置 Web MVC 组件
 - 部署 DispatcherServlet
+
+### Web MVC 核心组件
+
+#### 处理器管理
+
+- 映射：HandlerMapping
+
+    映射请求(Request)与处理器(Handler)，加上关联的拦截器(HandlerInterceptor)列表。主要有两种实现：
+    `RequestMappingHandlerMapping` 支持标注 `@RequestMapping` 的方法；
+    `SimpleUrlHandlerMapping` 维护精确的 URI 路径与处理器的映射。
+
+- 适配：HandlerAdapter
+
+    帮助`DispatcherServlet`调用请求处理器(Handler)。
+    
+- 执行：HandlerExceptionChain
+
+#### 页面渲染
+
+- 视图解析：ViewResolver
+
+    从处理器(Handlers)返回的字符类型的逻辑视图名称解析出实际的 View 对象，将该对象渲染
+    后的内容输出到 HTTP 响应中。
+    
+- 国际化：LocaleResolver、LocalContextResolver
+
+    从客户端解析出 Locale，为其实现国际化视图。
+    
+个性化：ThemeResolver
+
+#### 异常处理
+
+- 异常解析：HandlerExceptionResolver
+
+    解析异常，可能的处理策略是将异常映射到其他处理器、或到某个html页面。
+
+### 交互流程
+
+![](assets/img/posts/202007/spring-mvc-handle-process.png)
+
+### Web MVC 注解驱动 (3.1+)
+
+- 注解配置：@Configuration（Spring 范式注解）
+- 组件激活：@EnableWebMvc（Spring 模块装配）
+- 自定义组件配置：WebMvcConfigurer（Spring Bean）
+- 模型属性：@ModuleAttribute
+- 请求头：@RequestHeader
+- Cookie：@CookieValue
+
+```
+@Controller
+public class HelloWorldController {
+    @RequestMapping("")
+    public String index(Model model) {
+        return "index";
+    }
+
+    @ModelAttribute("message")
+    public String message() {
+        return "Hello World";
+    }
+
+    @ModelAttribute("acceptLanguage")
+    public String acceptLanguage(@RequestHeader("acceptLanguage") String acceptLanguage) {
+        return acceptLanguage;
+    }
+
+    @ModelAttribute("jSessionId")
+    public String jSessionId(@RequestHeader("jSessionId") String jSessionId) {
+        return jSessionId;
+    }
+}
+```
+- 校验参数：@Valid、@Validated
+- 注解处理：@ExceptionHandler
+- 切面通知：@ControllerAdvice
+    用来定义一种特殊的 @Component，其中定义一些多个 @Controller 共享的 ExceptionHandler、InitBinder和ModelAttribute
+
+### Web MVC 自动装配
+
+- Servlet 依赖：Servlet 3.0+
+- Servlet SPI：ServletContainerInitializer
+- Spring 适配：SpringServletContainerInitializer
+- Spring SPI：WebApplicationInitializer
+```java
+/**
+ * {@link WebApplicationInitializer} 实现
+ * 配置化方式替代 web.xml
+ *
+ * @Author: guangp
+ * @Date: 2020-07-18
+ */
+public class MyWebAppInitializer implements WebApplicationInitializer {
+    @Override
+    public void onStartup(ServletContext servletContext) throws ServletException {
+        // 加载 SpringApplicationContext
+        XmlWebApplicationContext xmlContext = new XmlWebApplicationContext();
+        xmlContext.setConfigLocation("/WEB-INF/app-context.xml");
+        
+        // 配置 DispatcherServlet
+        ServletRegistration.Dynamic dispatcherServlet = servletContext.addServlet("dispatcherServlet", DispatcherServlet.class);
+        dispatcherServlet.setLoadOnStartup(1);
+        dispatcherServlet.addMapping("/");
+        dispatcherServlet.setInitParameter("contextConfigLocation", "/WEB-INF/app-context.xml");
+    }
+}
+```
+- 编程驱动：AbstractDispatcherServletInitializer
+- 注解驱动：AbstractAnnotationConfigDispatcherServletInitializer
+```java
+/**
+ * {@link AbstractAnnotationConfigDispatcherServletInitializer} 默认实现
+ *
+ * @Author: guangp
+ * @Date: 2020-07-18
+ */
+public class DefaultAnnotationConfigDispatcherServletInitializer extends
+        AbstractAnnotationConfigDispatcherServletInitializer {
+    @Override
+    protected Class<?>[] getRootConfigClasses() {
+        return new Class[0];
+    }
+
+    @Override
+    protected Class<?>[] getServletConfigClasses() {
+        return new Class[]{
+            DispatcherServletConfiguration.class
+        };
+    }
+
+    @Override
+    protected String[] getServletMappings() {
+        return new String[]{"/"};
+    }
+}
+```
